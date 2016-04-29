@@ -70,7 +70,7 @@ func getConfigFiles(path string) []string {
 	if pathInfo.IsDir() {
 		dir, _ := pathCheck.Readdir(-1)
 		for _, file := range dir {
-			if file.Mode().IsRegular() {
+			if strings.HasSuffix(file.Name(), ".toml") && (file.Mode().IsRegular()) {
 				files = append(files, path+"/"+file.Name())
 			}
 		}
