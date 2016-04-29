@@ -193,7 +193,7 @@ func addTimestamps(metrics []byte) (timestampedMetrics []byte) {
 	 * be appending timestamps by themselves. And we will honor them. But
 	 * most of the exporters do not do that unfortunately. */
 
-	currentTime := strconv.Itoa(int(time.Now().Unix()))
+	currentTime := strconv.Itoa(int(time.Now().UnixNano() / int64(time.Millisecond)))
 	lines := strings.Split(string(metrics), "\n")
 	for i := 0; i < len(lines); i++ {
 		// skip comments and empty lines
