@@ -44,6 +44,9 @@ func main() {
 	hostname := fqdn.Get()
 	logger.Info("Starting prometheus-pusher", "instance_name", hostname)
 
+	for _, metric := range pusher.Metrics {
+		go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
+	}
 	for _ = range time.Tick(pusher.PushInterval) {
 		for _, metric := range pusher.Metrics {
 			go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
