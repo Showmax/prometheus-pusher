@@ -1,0 +1,49 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "KJlzXQe2AYH9tfdkc5Fmv4YYxl8=",
+			"path": "github.com/ShowMax/go-fqdn",
+			"revision": "dec1eb5e733f13b7cccababb55b9186c989e3bbe",
+			"revisionTime": "2016-04-14T10:53:56Z"
+		},
+		{
+			"checksumSHA1": "milAbDK2o3YTa1TBYLspVV1tTgo=",
+			"path": "github.com/achun/tom-toml",
+			"revision": "06af2ff2c47e5b3f8ed9416fc2d9bbb5ee054e4d",
+			"revisionTime": "2014-05-02T10:39:24Z"
+		},
+		{
+			"checksumSHA1": "rCffFCN6TpDAN3Jylyo8RFzhQ9E=",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "9cbef7c35391cca05f15f8181dc0b18bc9736dbb",
+			"revisionTime": "2016-02-20T07:59:35Z"
+		},
+		{
+			"checksumSHA1": "NkbetqlpWBi3gP08JDneC+axTKw=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "56b76bdf51f7708750eac80fa38b952bb9f32639",
+			"revisionTime": "2015-12-11T00:06:21Z"
+		},
+		{
+			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
+			"path": "github.com/mgutz/ansi",
+			"revision": "c286dcecd19ff979eeb73ea444e479b903f2cfcb",
+			"revisionTime": "2015-09-14T16:22:38Z"
+		},
+		{
+			"checksumSHA1": "3hFStRz5h8drRpcDywjr2BBHAeE=",
+			"path": "github.com/mgutz/logxi/v1",
+			"revision": "4f3e648499e341551c39e1a70640b902fd35f4bf",
+			"revisionTime": "2016-02-24T17:02:36Z"
+		},
+		{
+			"checksumSHA1": "Xz3hUrPvOYGWTuHrEryoYAj9zwg=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "9bb9f0998d48b31547d975974935ae9b48c7a03c",
+			"revisionTime": "2016-10-11T23:07:22Z"
+		}
+	],
+	"rootPath": "github.com/ShowMax/prometheus-pusher"
+}
