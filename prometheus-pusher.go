@@ -48,6 +48,11 @@ func main() {
 		go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
 	}
 	for _ = range time.Tick(pusher.PushInterval) {
+		pusher, err := parseConfig(*path)
+		if err != nil {
+			logger.Error("Error parsing configuration", err.Error())
+		}
+
 		for _, metric := range pusher.Metrics {
 			go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
 		}
@@ -171,7 +176,7 @@ func getMetrics(metricURL string) []byte {
 
 func pushMetrics(metricName string, pushgatewayURL string, instance string, metrics []byte, dummy *bool) {
 	postURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s", pushgatewayURL, metricName, instance)
-	if (*dummy) {
+	if *dummy {
 		fmt.Println(string(metrics))
 	} else {
 		logger.Info("Pushing Node exporter metrics", "endpoint", postURL)
