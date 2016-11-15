@@ -103,16 +103,13 @@ func parseConfig(path string) (pusherConfig, error) {
 
 			if metric == "config" {
 
-				switch {
-				case tomlFile["config.pushgateway_url"].IsValue():
+				if tomlFile["config.pushgateway_url"].IsValue() {
 					conf.PushGatewayURL = tomlFile["config.pushgateway_url"].String()
+				}
 
-				case tomlFile["config.push_interval"].IsValue():
+				if tomlFile["config.push_interval"].IsValue() {
 					interval := tomlFile["config.push_interval"].Int()
 					conf.PushInterval = time.Duration(interval) * time.Second
-
-				default:
-					logger.Warn("Unknown configuration field", "config_section", metric)
 				}
 
 			} else {
@@ -122,23 +119,22 @@ func parseConfig(path string) (pusherConfig, error) {
 				path := "/metrics"
 				scheme := "http"
 
-				switch {
-				case tomlFile[metric+".host"].IsValue():
+				if tomlFile[metric+".host"].IsValue() {
 					host = tomlFile[metric+".host"].String()
+				}
 
-				case tomlFile[metric+".path"].IsValue():
+				if tomlFile[metric+".path"].IsValue() {
 					path = tomlFile[metric+".path"].String()
+				}
 
-				case tomlFile[metric+".ssl"].IsValue():
+				if tomlFile[metric+".ssl"].IsValue() {
 					if tomlFile[metric+".ssl"].Boolean() {
 						scheme = "https"
 					}
+				}
 
-				case tomlFile[metric+".port"].IsValue():
+				if tomlFile[metric+".port"].IsValue() {
 					port = tomlFile[metric+".port"].Integer()
-
-				default:
-					logger.Warn("Unknown configuration field", "config_section", metric)
 				}
 
 				if port == 0 {
