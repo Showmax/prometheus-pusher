@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ShowMax/go-fqdn"
+	fqdn "github.com/ShowMax/go-fqdn"
+	"github.com/ShowMax/sockrus"
+	"github.com/Sirupsen/logrus"
 	"github.com/achun/tom-toml"
-	"github.com/mgutz/logxi/v1"
 )
 
 type pusherConfig struct {
@@ -27,44 +28,62 @@ type metricConfig struct {
 	URL  string
 }
 
-var logger log.Logger
+var (
+	defaultConfPath  = "/etc/prometheus-pusher/conf.d"
+	defaultLogSocket = "/run/showmax/socket_to_amqp.sock"
+	servicename      = "prometheus-pusher"
+)
 
 func main() {
-	path := flag.String("config", "/etc/prometheus-pusher/conf.d", "Config file or directory. If directory is specified then all files in the directory will be loaded.")
-	dummy := flag.Bool("dummy", false, "Do not post the metrics, just print them to stdout")
+	path := flag.String("config", defaultConfPath,
+		"Config file or directory. If directory is specified then all "+
+			"files in the directory will be loaded.")
+	dummy := flag.Bool("dummy", false,
+		"Do not post the metrics, just print them to stdout")
 	flag.Parse()
 
-	logger = log.New("prometheus-pusher")
-
-	pusher, err := parseConfig(*path)
-	if err != nil {
-		logger.Error("Error parsing configuration", err.Error())
-	}
+	_, logger := sockrus.NewSockrus(sockrus.Config{
+		LogLevel:       logrus.InfoLevel,
+		Service:        servicename,
+		SocketAddr:     defaultLogSocket,
+		SocketProtocol: "unix",
+	})
 
 	hostname := fqdn.Get()
-	logger.Info("Starting prometheus-pusher", "instance_name", hostname)
+	pusher, err := parseConfig(logger, *path)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Error(fmt.Sprintf("Error parsing configuration file %v.", *path))
+	}
+
+	logger.Info("Starting prometheus-pusher")
 
 	for _, metric := range pusher.Metrics {
-		go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
+		go getAndPush(logger, metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
 	}
 	for _ = range time.Tick(pusher.PushInterval) {
 		for _, metric := range pusher.Metrics {
-			go getAndPush(metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
+			go getAndPush(logger, metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
 		}
 	}
 }
 
-func getConfigFiles(path string) []string {
+func getConfigFiles(logger *logrus.Entry, path string) []string {
 	var files []string
 
 	pathCheck, err := os.Open(path)
 	if err != nil {
-		logger.Fatal("Unable to open configuration file(s)", "error", err.Error())
+		logger.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Fatal("Unable to open configuration file(s)")
 	}
 
 	pathInfo, err := pathCheck.Stat()
 	if err != nil {
-		logger.Fatal("Unable to stat configuration file(s)", "error", err.Error())
+		logger.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Fatal("Unable to stat configuration file(s)")
 	}
 
 	if pathInfo.IsDir() {
@@ -80,14 +99,14 @@ func getConfigFiles(path string) []string {
 	return files
 }
 
-func parseConfig(path string) (pusherConfig, error) {
+func parseConfig(logger *logrus.Entry, path string) (pusherConfig, error) {
 	conf := pusherConfig{
 		PushGatewayURL: "http://localhost:9091",
 		PushInterval:   time.Duration(60 * time.Second),
 		Metrics:        []metricConfig{},
 	}
 
-	for _, file := range getConfigFiles(path) {
+	for _, file := range getConfigFiles(logger, path) {
 		tomlFile, err := toml.LoadFile(file)
 		if err != nil {
 			return conf, err
@@ -133,7 +152,9 @@ func parseConfig(path string) (pusherConfig, error) {
 				}
 
 				if port == 0 {
-					logger.Fatal("Port is not defined", "config_section", metric)
+					logger.WithFields(logrus.Fields{
+						"config_section": metric,
+					}).Fatal("Port is not defined")
 				}
 
 				conf.Metrics = append(conf.Metrics, metricConfig{
@@ -147,35 +168,51 @@ func parseConfig(path string) (pusherConfig, error) {
 	return conf, nil
 }
 
-func getMetrics(metricURL string) []byte {
-	logger.Info("Getting Node Exporter metrics", "url", metricURL)
+func getMetrics(logger *logrus.Entry, metricName string, metricURL string) []byte {
+	logger.WithFields(logrus.Fields{
+		"metric_name": metricName,
+		"metric_url":  metricURL,
+	}).Info("Getting metrics")
 
 	resp, err := http.Get(metricURL)
 	if err != nil {
-		logger.Error(err.Error(), "error", err)
+		logger.WithFields(logrus.Fields{
+			"error":       err.Error(),
+			"metric_name": metricName,
+			"metric_url":  metricURL,
+		}).Error("Failed to get metrics.")
 		return nil
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error(err.Error(), "error", err)
+		logger.WithFields(logrus.Fields{
+			"error":       err.Error(),
+			"metric_name": metricName,
+			"metric_url":  metricURL,
+		}).Error("Failed to read response body.")
 		return nil
 	}
 	return body
 }
 
-func pushMetrics(metricName string, pushgatewayURL string, instance string, metrics []byte, dummy *bool) {
+func pushMetrics(logger *logrus.Entry, metricName string, pushgatewayURL string, instance string, metrics []byte, dummy *bool) {
 	postURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s", pushgatewayURL, metricName, instance)
-	if (*dummy) {
+	if *dummy {
 		fmt.Println(string(metrics))
 	} else {
-		logger.Info("Pushing Node exporter metrics", "endpoint", postURL)
+		logger.WithFields(logrus.Fields{
+			"endpoint_url": postURL,
+		}).Info("Pushing Node exporter metrics")
 
 		data := bytes.NewReader(metrics)
 		resp, err := http.Post(postURL, "text/plain", data)
 		if err != nil {
-			logger.Error(err.Error(), "error", err)
+			logger.WithFields(logrus.Fields{
+				"endpoint_url": postURL,
+				"error":        err.Error(),
+			}).Error("Failed to push metrics.")
 			return
 		}
 		defer resp.Body.Close() // FIXME: no need to close on error?
@@ -218,8 +255,8 @@ func addTimestamps(metrics []byte) (timestampedMetrics []byte) {
 	return
 }
 
-func getAndPush(metricName string, metricURL string, pushgatewayURL string, instance string, dummy *bool) {
-	if metrics := getMetrics(metricURL); metrics != nil {
-		pushMetrics(metricName, pushgatewayURL, instance, addTimestamps(metrics), dummy)
+func getAndPush(logger *logrus.Entry, metricName string, metricURL string, pushgatewayURL string, instance string, dummy *bool) {
+	if metrics := getMetrics(logger, metricName, metricURL); metrics != nil {
+		pushMetrics(logger, metricName, pushgatewayURL, instance, addTimestamps(metrics), dummy)
 	}
 }
