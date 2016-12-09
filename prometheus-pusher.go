@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err.Error(),
-		}).Error(fmt.Sprintf("Error parsing configuration file %v.", *path))
+		}).Fatal(fmt.Sprintf("Error parsing configuration file %v.", *path))
 	}
 
 	logger.Info("Starting prometheus-pusher")
