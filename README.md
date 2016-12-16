@@ -1,5 +1,5 @@
 # prometheus-pusher
-> `prometheus-pusher` aggregates [Prometheus](https://prometheus.io/) metrics from different endpoints and push them to [pushgateway](https://github.com/prometheus/pushgateway)
+> `prometheus-pusher` aggregates [Prometheus](https://prometheus.io/) metrics from different endpoints and pushes them to [pushgateway](https://github.com/prometheus/pushgateway)
 
 ## Installation
 ```
@@ -32,18 +32,4 @@ port = 9112
 
 
 ## Logging
-`prometheus-pusher` uses [logxi](https://github.com/mgutz/logxi#configuration) for logging.
-
-The format may be set via LOGXI_FORMAT environment variable. Valid values are "happy", "text", "JSON", "LTSV".
-
-By default logxi logs entries whose level is LevelWarn or above when using a terminal.
-
-To change the level, use LOGXI environment variable. Valid values are "DBG", "INF", "WRN", "ERR", "FTL".
-
-```
-LOGXI=* prometheus-pusher
-# the above statement is equivalent to this
-LOGXI=*=DBG prometheus-pusher
-# now using json format instead
-LOGXI_FORMAT=JSON prometheus-pusher
-```
+`prometheus-pusher` uses [logrus](https://github.com/Sirupsen/logrus/) with [sockrus](https://github.com/ShowMax/sockrus) hook for logging. There are some limitations we're aware of. PRs which enhance, but don't break, functionality are welcome.
