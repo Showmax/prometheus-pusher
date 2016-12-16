@@ -9,34 +9,28 @@
 			"revisionTime": "2016-04-14T10:53:56Z"
 		},
 		{
+			"checksumSHA1": "eHW81NSOL2Jr0BX1W5DA4DfAfI4=",
+			"path": "github.com/ShowMax/sockrus",
+			"revision": "337906565a8defc77fef3d43ac56c884a19237e1",
+			"revisionTime": "2016-10-26T13:43:25Z"
+		},
+		{
+			"checksumSHA1": "h5Q1o+kA7VMAR5QpBzVJZbBEgC0=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "881bee4e20a5d11a6a88a5667c6f292072ac1963",
+			"revisionTime": "2016-12-02T02:35:07Z"
+		},
+		{
 			"checksumSHA1": "milAbDK2o3YTa1TBYLspVV1tTgo=",
 			"path": "github.com/achun/tom-toml",
 			"revision": "06af2ff2c47e5b3f8ed9416fc2d9bbb5ee054e4d",
 			"revisionTime": "2014-05-02T10:39:24Z"
 		},
 		{
-			"checksumSHA1": "rCffFCN6TpDAN3Jylyo8RFzhQ9E=",
-			"path": "github.com/mattn/go-colorable",
-			"revision": "9cbef7c35391cca05f15f8181dc0b18bc9736dbb",
-			"revisionTime": "2016-02-20T07:59:35Z"
-		},
-		{
-			"checksumSHA1": "NkbetqlpWBi3gP08JDneC+axTKw=",
-			"path": "github.com/mattn/go-isatty",
-			"revision": "56b76bdf51f7708750eac80fa38b952bb9f32639",
-			"revisionTime": "2015-12-11T00:06:21Z"
-		},
-		{
-			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
-			"path": "github.com/mgutz/ansi",
-			"revision": "c286dcecd19ff979eeb73ea444e479b903f2cfcb",
-			"revisionTime": "2015-09-14T16:22:38Z"
-		},
-		{
-			"checksumSHA1": "3hFStRz5h8drRpcDywjr2BBHAeE=",
-			"path": "github.com/mgutz/logxi/v1",
-			"revision": "4f3e648499e341551c39e1a70640b902fd35f4bf",
-			"revisionTime": "2016-02-24T17:02:36Z"
+			"checksumSHA1": "j9CeDPsNxGL3T/NPMINL6jvo/9M=",
+			"path": "github.com/bshuster-repo/logrus-logstash-hook",
+			"revision": "544f72d23cd2536636193deff26b6190c47e10bb",
+			"revisionTime": "2016-11-03T11:40:47Z"
 		},
 		{
 			"checksumSHA1": "Xz3hUrPvOYGWTuHrEryoYAj9zwg=",
