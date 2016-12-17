@@ -40,10 +40,21 @@ func main() {
 			"files in the directory will be loaded.")
 	dummy := flag.Bool("dummy", false,
 		"Do not post the metrics, just print them to stdout")
+	verbosity := flag.Uint("verbosity", 1, "Set logging verbosity.")
 	flag.Parse()
 
+	var logLevel logrus.Level
+	switch *verbosity {
+	case 0:
+		logLevel = logrus.ErrorLevel
+	case 1:
+		logLevel = logrus.InfoLevel
+	default:
+		logLevel = logrus.DebugLevel
+	}
+
 	_, logger := sockrus.NewSockrus(sockrus.Config{
-		LogLevel:       logrus.InfoLevel,
+		LogLevel:       logLevel,
 		Service:        servicename,
 		SocketAddr:     defaultLogSocket,
 		SocketProtocol: "unix",
@@ -172,7 +183,7 @@ func getMetrics(logger *logrus.Entry, metricName string, metricURL string) []byt
 	logger.WithFields(logrus.Fields{
 		"metric_name": metricName,
 		"metric_url":  metricURL,
-	}).Info("Getting metrics")
+	}).Debug("Getting metrics")
 
 	resp, err := http.Get(metricURL)
 	if err != nil {
@@ -204,7 +215,8 @@ func pushMetrics(logger *logrus.Entry, metricName string, pushgatewayURL string,
 	} else {
 		logger.WithFields(logrus.Fields{
 			"endpoint_url": postURL,
-		}).Info("Pushing Node exporter metrics")
+			"metric_name":  metricName,
+		}).Debug("Pushing metrics.")
 
 		data := bytes.NewReader(metrics)
 		resp, err := http.Post(postURL, "text/plain", data)
