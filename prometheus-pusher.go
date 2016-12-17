@@ -40,17 +40,28 @@ func main() {
 			"files in the directory will be loaded.")
 	dummy := flag.Bool("dummy", false,
 		"Do not post the metrics, just print them to stdout")
+	verbosity := flag.Uint("verbosity", 1, "Set logging verbosity.")
 	flag.Parse()
 
+	var logLevel logrus.Level
+	switch *verbosity {
+	case 0:
+		logLevel = logrus.ErrorLevel
+	case 1:
+		logLevel = logrus.InfoLevel
+	default:
+		logLevel = logrus.DebugLevel
+	}
+
 	_, logger := sockrus.NewSockrus(sockrus.Config{
-		LogLevel:       logrus.InfoLevel,
+		LogLevel:       logLevel,
 		Service:        servicename,
 		SocketAddr:     defaultLogSocket,
 		SocketProtocol: "unix",
 	})
 
 	hostname := fqdn.Get()
-	pusher, err := parseConfig(logger, *path)
+	pusher, err := parseConfig(*path)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err.Error(),
@@ -69,21 +80,17 @@ func main() {
 	}
 }
 
-func getConfigFiles(logger *logrus.Entry, path string) []string {
+func getConfigFiles(path string) ([]string, error) {
 	var files []string
 
 	pathCheck, err := os.Open(path)
 	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatal("Unable to open configuration file(s)")
+		return []string{}, err
 	}
 
 	pathInfo, err := pathCheck.Stat()
 	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatal("Unable to stat configuration file(s)")
+		return []string{}, err
 	}
 
 	if pathInfo.IsDir() {
@@ -96,17 +103,22 @@ func getConfigFiles(logger *logrus.Entry, path string) []string {
 	} else {
 		files = []string{path}
 	}
-	return files
+	return files, nil
 }
 
-func parseConfig(logger *logrus.Entry, path string) (pusherConfig, error) {
+func parseConfig(path string) (pusherConfig, error) {
 	conf := pusherConfig{
 		PushGatewayURL: "http://localhost:9091",
 		PushInterval:   time.Duration(60 * time.Second),
 		Metrics:        []metricConfig{},
 	}
 
-	for _, file := range getConfigFiles(logger, path) {
+	configFiles, err := getConfigFiles(path)
+	if err != nil {
+		return conf, err
+	}
+
+	for _, file := range configFiles {
 		tomlFile, err := toml.LoadFile(file)
 		if err != nil {
 			return conf, err
@@ -152,9 +164,8 @@ func parseConfig(logger *logrus.Entry, path string) (pusherConfig, error) {
 				}
 
 				if port == 0 {
-					logger.WithFields(logrus.Fields{
-						"config_section": metric,
-					}).Fatal("Port is not defined")
+					return conf, fmt.Errorf("Port is not defined for metric %s",
+						metric)
 				}
 
 				conf.Metrics = append(conf.Metrics, metricConfig{
@@ -172,7 +183,7 @@ func getMetrics(logger *logrus.Entry, metricName string, metricURL string) []byt
 	logger.WithFields(logrus.Fields{
 		"metric_name": metricName,
 		"metric_url":  metricURL,
-	}).Info("Getting metrics")
+	}).Debug("Getting metrics")
 
 	resp, err := http.Get(metricURL)
 	if err != nil {
@@ -204,7 +215,8 @@ func pushMetrics(logger *logrus.Entry, metricName string, pushgatewayURL string,
 	} else {
 		logger.WithFields(logrus.Fields{
 			"endpoint_url": postURL,
-		}).Info("Pushing Node exporter metrics")
+			"metric_name":  metricName,
+		}).Debug("Pushing metrics.")
 
 		data := bytes.NewReader(metrics)
 		resp, err := http.Post(postURL, "text/plain", data)
