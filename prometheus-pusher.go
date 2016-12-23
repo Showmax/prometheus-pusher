@@ -71,11 +71,11 @@ func main() {
 	logger.Info("Starting prometheus-pusher")
 
 	for _, metric := range pusher.Metrics {
-		go getAndPush(logger, metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
+		go getAndPush(logger, metric, pusher.PushGatewayURL, hostname, dummy)
 	}
 	for _ = range time.Tick(pusher.PushInterval) {
 		for _, metric := range pusher.Metrics {
-			go getAndPush(logger, metric.Name, metric.URL, pusher.PushGatewayURL, hostname, dummy)
+			go getAndPush(logger, metric, pusher.PushGatewayURL, hostname, dummy)
 		}
 	}
 }
@@ -179,18 +179,18 @@ func parseConfig(path string) (pusherConfig, error) {
 	return conf, nil
 }
 
-func getMetrics(logger *logrus.Entry, metricName string, metricURL string) []byte {
+func getMetrics(logger *logrus.Entry, metric metricConfig) []byte {
 	logger.WithFields(logrus.Fields{
-		"metric_name": metricName,
-		"metric_url":  metricURL,
+		"metric_name": metric.Name,
+		"metric_url":  metric.URL,
 	}).Debug("Getting metrics")
 
-	resp, err := http.Get(metricURL)
+	resp, err := http.Get(metric.URL)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
-			"metric_name": metricName,
-			"metric_url":  metricURL,
+			"metric_name": metric.Name,
+			"metric_url":  metric.URL,
 		}).Error("Failed to get metrics.")
 		return nil
 	}
@@ -200,8 +200,8 @@ func getMetrics(logger *logrus.Entry, metricName string, metricURL string) []byt
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
-			"metric_name": metricName,
-			"metric_url":  metricURL,
+			"metric_name": metric.Name,
+			"metric_url":  metric.URL,
 		}).Error("Failed to read response body.")
 		return nil
 	}
@@ -267,8 +267,8 @@ func addTimestamps(metrics []byte) (timestampedMetrics []byte) {
 	return
 }
 
-func getAndPush(logger *logrus.Entry, metricName string, metricURL string, pushgatewayURL string, instance string, dummy *bool) {
-	if metrics := getMetrics(logger, metricName, metricURL); metrics != nil {
-		pushMetrics(logger, metricName, pushgatewayURL, instance, addTimestamps(metrics), dummy)
+func getAndPush(logger *logrus.Entry, metric metricConfig, pushgatewayURL string, instance string, dummy *bool) {
+	if metrics := getMetrics(logger, metric); metrics != nil {
+		pushMetrics(logger, metric.Name, pushgatewayURL, instance, addTimestamps(metrics), dummy)
 	}
 }
