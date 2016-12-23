@@ -60,6 +60,8 @@ func main() {
 		SocketProtocol: "unix",
 	})
 
+	logger.Info("Starting prometheus-pusher")
+
 	hostname := fqdn.Get()
 	pusher, err := parseConfig(*path)
 	if err != nil {
@@ -67,8 +69,6 @@ func main() {
 			"error": err.Error(),
 		}).Fatal(fmt.Sprintf("Error parsing configuration file %v.", *path))
 	}
-
-	logger.Info("Starting prometheus-pusher")
 
 	for _, metric := range pusher.Metrics {
 		go getAndPush(logger, metric, pusher.PushGatewayURL, hostname, dummy)
