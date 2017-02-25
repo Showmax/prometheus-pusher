@@ -29,9 +29,10 @@ type metricConfig struct {
 }
 
 var (
-	defaultConfPath  = "/etc/prometheus-pusher/conf.d"
-	defaultLogSocket = "/run/showmax/socket_to_amqp.sock"
-	servicename      = "prometheus-pusher"
+	defaultConfPath          = "/etc/prometheus-pusher/conf.d"
+	defaultLogSocket         = "/run/showmax/socket_to_amqp.sock"
+	servicename              = "prometheus-pusher"
+	defaultHTTPClientTimeout = 30 * time.Second
 )
 
 func main() {
@@ -185,7 +186,10 @@ func getMetrics(logger *logrus.Entry, metric metricConfig) []byte {
 		"metric_url":  metric.URL,
 	}).Debug("Getting metrics")
 
-	resp, err := http.Get(metric.URL)
+	client := &http.Client{
+		Timeout: defaultHTTPClientTimeout,
+	}
+	resp, err := client.Get(metric.URL)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error":       err.Error(),
@@ -219,7 +223,10 @@ func pushMetrics(logger *logrus.Entry, metricName string, pushgatewayURL string,
 		}).Debug("Pushing metrics.")
 
 		data := bytes.NewReader(metrics)
-		resp, err := http.Post(postURL, "text/plain", data)
+		client := &http.Client{
+			Timeout: defaultHTTPClientTimeout,
+		}
+		resp, err := client.Post(postURL, "text/plain", data)
 		if err != nil {
 			logger.WithFields(logrus.Fields{
 				"endpoint_url": postURL,
