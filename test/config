@@ -1,0 +1,13 @@
+[config]
+pushgateway_url = "http://%s:9091/metrics"
+route_map = "routes"
+default_route = "test0,test-bck"
+push_interval = 1
+
+[resource1]
+port = 9091
+
+[resource2]
+pushgateway_url = "http://test-static:9091/metrics"
+host = "test-remote"
+port = 9091
