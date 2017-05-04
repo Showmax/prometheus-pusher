@@ -75,6 +75,11 @@ func main() {
 		go getAndPush(logger, metric, pusher.PushGatewayURL, hostname, dummy)
 	}
 	for _ = range time.Tick(pusher.PushInterval) {
+		pusher, err := parseConfig(*path)
+		if err != nil {
+			logger.Error("Error parsing configuration", err.Error())
+		}
+
 		for _, metric := range pusher.Metrics {
 			go getAndPush(logger, metric, pusher.PushGatewayURL, hostname, dummy)
 		}
