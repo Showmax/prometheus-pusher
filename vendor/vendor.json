@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "KJlzXQe2AYH9tfdkc5Fmv4YYxl8=",
+			"checksumSHA1": "Cp8sJVMPvud4pUlxAZmnXQnnFTk=",
 			"path": "github.com/ShowMax/go-fqdn",
-			"revision": "dec1eb5e733f13b7cccababb55b9186c989e3bbe",
-			"revisionTime": "2016-04-14T10:53:56Z"
+			"revision": "2501cdd51ef4c60dd727c58b2199e1a09466b10f",
+			"revisionTime": "2016-09-09T08:34:04Z"
 		},
 		{
 			"checksumSHA1": "uoB6KP1KNhKHvALBxGOJAkMqp00=",
@@ -15,29 +15,47 @@
 			"revisionTime": "2016-12-17T07:28:22Z"
 		},
 		{
-			"checksumSHA1": "h5Q1o+kA7VMAR5QpBzVJZbBEgC0=",
+			"checksumSHA1": "m+iiamnbukzE8kFPfBche6D0FmQ=",
 			"path": "github.com/Sirupsen/logrus",
-			"revision": "881bee4e20a5d11a6a88a5667c6f292072ac1963",
-			"revisionTime": "2016-12-02T02:35:07Z"
+			"revision": "5b60b3d3ee017ed00bcd0225fcca7acab767844b",
+			"revisionTime": "2017-05-04T07:10:19Z"
 		},
 		{
-			"checksumSHA1": "milAbDK2o3YTa1TBYLspVV1tTgo=",
-			"path": "github.com/achun/tom-toml",
-			"revision": "06af2ff2c47e5b3f8ed9416fc2d9bbb5ee054e4d",
-			"revisionTime": "2014-05-02T10:39:24Z"
-		},
-		{
-			"checksumSHA1": "j9CeDPsNxGL3T/NPMINL6jvo/9M=",
+			"checksumSHA1": "yT61nnTaJu9HIAJ9nB5+Y8vg7pk=",
 			"path": "github.com/bshuster-repo/logrus-logstash-hook",
-			"revision": "544f72d23cd2536636193deff26b6190c47e10bb",
-			"revisionTime": "2016-11-03T11:40:47Z"
+			"revision": "cf321b0839ac25d63a7c06163650047ee0b7f12d",
+			"revisionTime": "2017-03-30T08:23:42Z"
 		},
 		{
-			"checksumSHA1": "Xz3hUrPvOYGWTuHrEryoYAj9zwg=",
+			"checksumSHA1": "zvmksNyW6g+Fd/bywd4vcn8rp+M=",
+			"path": "github.com/hashicorp/go-immutable-radix",
+			"revision": "30664b879c9a771d8d50b137ab80ee0748cb2fcc",
+			"revisionTime": "2017-02-14T02:52:36Z"
+		},
+		{
+			"checksumSHA1": "9hffs0bAIU6CquiRhKQdzjHnKt0=",
+			"path": "github.com/hashicorp/golang-lru/simplelru",
+			"revision": "0a025b7e63adc15a622f29b0b2c4c3848243bbf6",
+			"revisionTime": "2016-08-13T22:13:03Z"
+		},
+		{
+			"checksumSHA1": "F1IYMLBLAZaTOWnmXsgaxTGvrWI=",
+			"path": "github.com/pelletier/go-buffruneio",
+			"revision": "c37440a7cf42ac63b919c752ca73a85067e05992",
+			"revisionTime": "2017-02-27T22:03:11Z"
+		},
+		{
+			"checksumSHA1": "/OkTcXU6ggjvJhnuF5oZDfcBUtg=",
+			"path": "github.com/pelletier/go-toml",
+			"revision": "97253b98df84f9eef872866d079e74b8265150f1",
+			"revisionTime": "2017-05-04T04:03:14Z"
+		},
+		{
+			"checksumSHA1": "oS0UZOGWVVsVciOQ8nZJ582mFF8=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "9bb9f0998d48b31547d975974935ae9b48c7a03c",
-			"revisionTime": "2016-10-11T23:07:22Z"
+			"revision": "9ccfe848b9db8435a24c424abbc07a921adf1df5",
+			"revisionTime": "2017-04-27T03:54:25Z"
 		}
 	],
-	"rootPath": "github.com/ShowMax/prometheus-pusher"
+	"rootPath": "github.com/Showmax/prometheus-pusher"
 }
