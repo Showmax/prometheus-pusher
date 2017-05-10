@@ -1,6 +1,6 @@
 [config]
 pushgateway_url = "http://%s:9091/metrics"
-route_map = "routes"
+route_map = "test/routes"
 default_route = "test0,test-bck"
 push_interval = 1
 

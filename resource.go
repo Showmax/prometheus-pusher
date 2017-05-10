@@ -77,20 +77,16 @@ func newResource(name string, cfg *pusherConfig, grm *routeMap) *resource {
 		logger.Fatalf("No pushgateway_url derived from config for resource '%s'", name)
 	}
 
-	var defaultRoute string
+	defaultRoute := cfg.defaultRoute
 	if cfg.resources[name].defaultRoute != "" {
 		defaultRoute = cfg.resources[name].defaultRoute
-	} else if cfg.defaultRoute != "" {
-		defaultRoute = cfg.defaultRoute
-	} else {
-		defaultRoute = "localhost"
 	}
 
 	var rm *routeMap
 	if cfg.resources[name].routeMap != "" {
 		rm = newRouteMap(cfg.resources[name].routeMap, defaultRoute)
 	} else {
-		rm = grm
+		rm = newRouteMap(cfg.routeMap, defaultRoute)
 	}
 
 	return &resource{
@@ -109,15 +105,15 @@ func newResource(name string, cfg *pusherConfig, grm *routeMap) *resource {
 func (r *resource) getMetrics() []byte {
 	logger.WithFields(logrus.Fields{
 		"resource_name": r.name,
-		"resource_url":  r.pushGatewayURL,
+		"resource_url":  r.resURL,
 	}).Debug("Getting metrics")
 
-	resp, err := r.httpClient.Get(r.pushGatewayURL)
+	resp, err := r.httpClient.Get(r.resURL)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error":         err.Error(),
 			"resource_name": r.name,
-			"resource_url":  r.pushGatewayURL,
+			"resource_url":  r.resURL,
 		}).Error("Failed to get metrics.")
 		return nil
 	}
@@ -128,7 +124,7 @@ func (r *resource) getMetrics() []byte {
 		logger.WithFields(logrus.Fields{
 			"error":         err.Error(),
 			"resource_name": r.name,
-			"resource_url":  r.pushGatewayURL,
+			"resource_url":  r.resURL,
 		}).Error("Failed to read response body.")
 		return nil
 	}

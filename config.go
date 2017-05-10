@@ -78,9 +78,8 @@ type pusherConfig struct {
 //
 func parseConfig(data []byte) (*pusherConfig, error) {
 	p := &pusherConfig{
-		pushGatewayURL: "http://localhost:9091/metrics",
-		pushInterval:   time.Duration(60) * time.Second,
-		resources:      make(map[string]*resourceConfig),
+		pushInterval: time.Duration(60) * time.Second,
+		resources:    make(map[string]*resourceConfig),
 	}
 
 	rd := bytes.NewReader(data)
@@ -91,6 +90,8 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 
 	if t.Has("config.pushgateway_url") {
 		p.pushGatewayURL = t.Get("config.pushgateway_url").(string)
+	} else {
+		p.pushGatewayURL = "http://localhost:9091/metrics"
 	}
 
 	if t.Has("config.push_interval") {
@@ -101,8 +102,8 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 		p.routeMap = t.Get("config.route_map").(string)
 	}
 
-	if t.Has("config.route_map") {
-		p.routeMap = t.Get("config.route_map").(string)
+	if t.Has("config.default_route") {
+		p.defaultRoute = t.Get("config.default_route").(string)
 	}
 
 	for _, resName := range t.Keys() {
@@ -111,14 +112,14 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 		}
 
 		res := &resourceConfig{
-			pushGatewayURL: "http://localhost:9091",
-			defaultRoute:   "",
+			pushGatewayURL: p.pushGatewayURL,
+			defaultRoute:   p.defaultRoute,
 			resURL:         "",
 			host:           "localhost",
 			port:           0,
 			ssl:            false,
 			path:           "/metrics",
-			routeMap:       "",
+			routeMap:       p.routeMap,
 		}
 
 		if t.Has(resName + ".port") {

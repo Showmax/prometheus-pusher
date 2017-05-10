@@ -98,18 +98,19 @@ func main() {
 		for s := range resources.sig {
 			logger.Infof("Received %s signal, will shut down", s)
 			resources.shutdown()
+			return
 		}
 	}()
+
+	resources.process()
 
 	for {
 		select {
 		case <-resources.run():
-			logger.Info("Started processing resources")
 			resources.process()
-			logger.Info("Finished processing resources")
 		case <-resources.stop():
 			logger.Info("Resources processing stopped")
-			break
+			os.Exit(0)
 		}
 	}
 }

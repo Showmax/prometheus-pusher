@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -13,8 +12,10 @@ type metrics struct {
 	cNl    bool        // semaphore for new line capture
 	cName  bool        // semaphore for metric name capture
 	cData  bool        // semaphore for metric data capture
+	cCmt   bool        // semaphore for comment capture
 	cBrace int         // counter for curly brace capture
-	brd    [][3]uint64 // data borders map
+	dBrd   [][3]uint64 // data borders map
+	dCmt   [][2]uint64 // comment borders map
 	bytes  []byte      // metrics data payload
 }
 
@@ -29,23 +30,20 @@ type metric struct {
 
 // create metric from metrics' []byte payload
 //
-// It works by reading a sections of scanned data governed by `brd`
+// It works by reading a sections of scanned data governed by `dBrd`
 // (which says where name and metric borders are) then trims leading and
 // ending whitespaces and splits the data into fields by the remaining whitespaces
 // If there are less than 3 fields, timestamp is added.
 //
-func newMetric(m *metrics, idx int, ch chan *metric, rm *routeMap, ts *[]byte, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	mf := bytes.Fields(m.bytes[m.brd[idx][1]:m.brd[idx][2]])
-	// logger.Error(string(mf[0]))
-	if len(mf) < 2 { // no timestamp
+func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte) *metric {
+	mf := bytes.Fields(m.bytes[m.dBrd[idx][1]:m.dBrd[idx][2]])
+	if len(mf) < 3 { // no timestamp
 		mf = append(mf, *ts)
 	}
-	mf = append([][]byte{m.bytes[m.brd[idx][0]:m.brd[idx][1]]}, mf...)
+	mf = append([][]byte{m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]}, mf...)
 
-	ch <- &metric{
-		dsts:  rm.route(m.bytes[m.brd[idx][0]:m.brd[idx][1]]),
+	return &metric{
+		dsts:  rm.route(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]),
 		bytes: bytes.Join(mf, []byte{' '}),
 	}
 }
@@ -59,10 +57,16 @@ func newMetrics(bytes []byte) *metrics {
 		cNl:    true,
 		cName:  false,
 		cData:  false,
+		cCmt:   false,
 		cBrace: 0,
-		brd:    make([][3]uint64, 0),
+		dBrd:   make([][3]uint64, 0),
+		dCmt:   make([][2]uint64, 0),
 	}
 	return m.scan()
+}
+
+func newComment(m *metrics, idx int) []byte {
+	return append(m.bytes[m.dCmt[idx][0]:m.dCmt[idx][1]], '\n')
 }
 
 // scans bytes byte by byte and marks indices
@@ -72,67 +76,83 @@ func (m *metrics) scan() *metrics {
 	for idx, char := range m.bytes {
 		switch {
 		case m.isValidNameChar(idx) && m.isOnNewLine(): // [a-zA-Z0-9_] character on new line
-			m.startCapture(idx)
+			m.startMetricCapture(idx)
+		case char == 35 && m.isOnNewLine(): // comment char on new line
+			m.unflagNewline()
+			m.startCommentCapture(idx)
 		case char == 10: // newline character
 			m.flagNewline()
-			if m.isCapturingData() {
-				m.stopDataCapture(idx)
+			if m.isCapturingMetricData() {
+				m.stopMetricDataCapture(idx)
+			}
+			if m.isCapturingComment() {
+				m.stopCommentCapture(idx)
 			}
 		case char == 9 || char == 32: // tab or space characters while capturing a name
 			if m.isInBraces() {
 				continue
 			}
-			if m.isCapturingName() {
-				m.stopNameCapture(idx)
+			if m.isCapturingMetricName() {
+				m.stopMetricNameCapture(idx)
 			}
 			if m.isOnNewLine() { // hack for metrics with spaces before name
 				m.flagNewline()
 			}
-		case char == 123:
-			m.openBrace()
-		case char == 125:
-			m.closeBrace()
-		case char == 35 && m.isOnNewLine(): // comment char on new line
-			m.unflagNewline()
-		case char == 123: // open curly brace
-			if m.isCapturingName() {
-				m.stopNameCapture(idx)
+		case char == 123: // open curly brace outside comment
+			if !m.isCapturingComment() { // outside comment
+				m.openBrace()
+			} else if m.isCapturingMetricName() { // after metric name
+				m.stopMetricNameCapture(idx)
 			}
+		case char == 125 && !m.isCapturingComment(): // close curly brace outside comment
+			m.closeBrace()
 		default: // any other character
 			if m.isOnNewLine() {
 				m.unflagNewline()
 			}
 		}
-		if m.isLastChar(idx) && m.isCapturingData() { // end of data
-			m.stopDataCapture(idx)
+		if m.isLastChar(idx) {
+			if m.isCapturingMetricData() { // end of data
+				m.stopMetricDataCapture(idx)
+			}
+			if m.isCapturingComment() {
+				m.stopCommentCapture(idx)
+			}
 		}
 	}
 	return m
 }
 
-// inverse-multiplexes bytes into buckets by their destination
-// and adds missing timestamps
+// Inverse-multiplexes bytes into buckets by their destination
+// and adds missing timestamps.
+//
+// Also prepends each destination bucket with all the comment
+// lines from input data.
 //
 func (m *metrics) imux(rm *routeMap) map[string][]byte {
 	// init
 	r := make(map[string][]byte)
-	ch := make(chan *metric, len(m.brd))
-	wg := &sync.WaitGroup{}
+	ch := make(chan *metric, len(m.dBrd))
 	ts := []byte(strconv.Itoa(int(time.Now().UnixNano() / int64(time.Millisecond))))
+	cmts := make([]byte, 0)
 
-	// map
-	wg.Add(len(m.brd))
-	for i := range m.brd {
-		go newMetric(m, i, ch, rm, &ts, wg)
+	// map data
+	for i := range m.dBrd {
+		ch <- newMetric(m, i, rm, &ts)
 	}
-
-	// wait for mappers to finish
-	wg.Wait()
 	close(ch)
 
-	// reduce
+	// concat all comments
+	for c := range m.dCmt {
+		cmts = append(cmts, newComment(m, c)...)
+	}
+
+	// reduce []byte and prepend with comments
 	for metric := range ch {
 		for _, dst := range metric.dsts {
+			if len(r[dst]) == 0 {
+				r[dst] = append(r[dst], cmts...)
+			}
 			r[dst] = append(r[dst], metric.bytes...)
 			r[dst] = append(r[dst], byte('\n'))
 		}
@@ -149,11 +169,15 @@ func (m *metrics) imux(rm *routeMap) map[string][]byte {
  * self-explanatory.
  */
 
-func (m *metrics) isCapturingName() bool {
+func (m *metrics) isCapturingComment() bool {
+	return m.cCmt
+}
+
+func (m *metrics) isCapturingMetricName() bool {
 	return m.cName
 }
 
-func (m *metrics) isCapturingData() bool {
+func (m *metrics) isCapturingMetricData() bool {
 	return m.cData
 }
 
@@ -184,21 +208,31 @@ func (m *metrics) isValidNameChar(idx int) bool {
 	}
 }
 
-func (m *metrics) startCapture(idx int) {
-	m.brd = append(m.brd, [3]uint64{uint64(idx), uint64(idx), uint64(idx)})
+func (m *metrics) startMetricCapture(idx int) {
+	m.dBrd = append(m.dBrd, [3]uint64{uint64(idx), uint64(idx), uint64(idx)})
 	m.unflagNewline()
 	m.cName = true
 	m.cData = true
 }
 
-func (m *metrics) stopNameCapture(idx int) {
-	m.brd[len(m.brd)-1][1] = uint64(idx)
+func (m *metrics) stopMetricNameCapture(idx int) {
+	m.dBrd[len(m.dBrd)-1][1] = uint64(idx)
 	m.cName = false
 }
 
-func (m *metrics) stopDataCapture(idx int) {
-	m.brd[len(m.brd)-1][2] = uint64(idx)
+func (m *metrics) stopMetricDataCapture(idx int) {
+	m.dBrd[len(m.dBrd)-1][2] = uint64(idx)
 	m.cData = false
+}
+
+func (m *metrics) startCommentCapture(idx int) {
+	m.dCmt = append(m.dCmt, [2]uint64{uint64(idx), uint64(idx)})
+	m.cCmt = true
+}
+
+func (m *metrics) stopCommentCapture(idx int) {
+	m.dCmt[len(m.dCmt)-1][1] = uint64(idx)
+	m.cCmt = false
 }
 
 func (m *metrics) flagNewline() {

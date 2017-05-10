@@ -34,7 +34,7 @@ PROJECT_BUILD_FILES = $(filter-out $(wildcard *test.go),$(PROJECT_ALL_FILES))
 VERSION = $(file <VERSION)
 
 -include config.mk .config.mk .cfg.mk includes.mk .includes.mk
-
+https://github.com/golang/go/wiki/SliceTricks
 # overrideable variables
 GO ?= $(shell which go)
 GOVENDOR ?= govendor
@@ -87,14 +87,15 @@ mrproper:
 	$(call banner,REMOVING govendor ENVIRONEMNT)
 	rm -rf $(BUILD_DIR)/$(NAME) vendor $(TEST)
 
-.gitignore:
+.gitignore: Makefile
 	$(call banner,UPDATING .gitignore)
-	grep -q $(BUILD_DIR)/$(NAME) .gitignore 2>/dev/null || echo $(BUILD_DIR)/$(NAME) >> .gitignore
-	grep -q $(TEST) .gitignore 2>/dev/null || echo $(TEST) >> .gitignore
+	grep -q $(BUILD_DIR)/$(NAME) $@ 2>/dev/null || echo $(BUILD_DIR)/$(NAME) >> $@
+	grep -q $(TEST) $@ 2>/dev/null || echo $(TEST) >> $@
+	touch $@
 
 bin/.gitkeep:
 	mkdir -p bin
 	touch $@
 
 VERSION:
-	test -z "$$(git status --porcelain $(PROJECT_ALL_FILES) $(VENDOR_LIBS))" || echo -e '\n|\n| YOU HAVE TO UPDATE THE VERSION AND COMMIT FIRST\n|\n'
+	@test -z "$$(git status --porcelain $(PROJECT_ALL_FILES) $(VENDOR_LIBS))" || ( echo -e '\n|\n| YOU HAVE TO UPDATE THE VERSION AND COMMIT FIRST\n|\n' && false )
