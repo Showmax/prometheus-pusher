@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	// "fmt"
 	"regexp"
 	"testing"
 )
@@ -11,12 +12,12 @@ func TestMetrics(t *testing.T) {
 	var m *metrics
 	var mapped map[string][]byte
 	rm := newRouteMap("test/routes", "test")
-	testRe := regexp.MustCompile("^[a-zA-Z0-9_]+({.+})? [\\-0-9e+\\.]")
+	testRe := regexp.MustCompile("^(?:\\w+(?:{.*?})?)\\s(?:-?\\d+(?:\\.\\d+(?:e(\\+|-)\\d+)?)?)\\s(?:\\d{8,14})$")
 
 	t.Run("new", func(t *testing.T) {
 		m = newMetrics(mbTest)
-		if len(m.brd) != 889 {
-			t.Fatalf("Expected to read 889 metrics, got %d", len(m.brd))
+		if len(m.dBrd) != 889 {
+			t.Fatalf("Expected to read 889 metrics, got %d", len(m.dBrd))
 		}
 	})
 
@@ -29,8 +30,11 @@ func TestMetrics(t *testing.T) {
 			t.Run(dst, func(t *testing.T) {
 				scn := bufio.NewScanner(bytes.NewBuffer(data))
 				for scn.Scan() {
-					if !testRe.Match(scn.Bytes()) {
-						t.Fatalf("Metrics line `%s` doesn't correspond to the expected format (name[{fields}] value timestamp)", scn.Text())
+					if scn.Bytes()[0] != '#' {
+						// t.Logf("%s - %s\n", dst, scn.Text())
+						if !testRe.Match(scn.Bytes()) {
+							t.Fatalf("Metrics line `%s` doesn't correspond to the expected format (name[{fields}] value timestamp)", scn.Text())
+						}
 					}
 				}
 			})
