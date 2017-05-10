@@ -138,7 +138,7 @@ func (r *resource) pushMetrics(metrics []byte, dst string, wg *sync.WaitGroup) {
 
 	postURL := fmt.Sprintf(r.pushGatewayURL, dst) + fmt.Sprintf("/job/%s/instance/%s", r.name, hostname)
 	if dummy {
-		fmt.Println(string(metrics))
+		fmt.Printf("POST %s\n%s\n", postURL, string(metrics))
 		return
 	}
 
