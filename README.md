@@ -1,33 +1,63 @@
 # prometheus-pusher
 > `prometheus-pusher` aggregates [Prometheus](https://prometheus.io/) metrics from different endpoints and pushes them to [pushgateway](https://github.com/prometheus/pushgateway)
 
+## Architecture
+IMG
+
+`prometheus-pusher` fetches metrics data from configured resources in specified interval and does inverse multiplexing on each metric, where destination for each one is decided by the prefix of metric name specified in route map file.
+
 ## Installation
 ```
-$ go get github.com/ShowMax/prometheus-pusher
+$ go get -u github.com/ShowMax/prometheus-pusher
 ```
 
 ## Usage
-```
-  -config string
-    	Config file or directory. If directory is specified then all files in the directory will be loaded. (default "/etc/prometheus-pusher/conf.d")
-  -dummy
-    	Do not post the metrics, just print them to stdout
-  -http-timeout duration
-    	Timeout for HTTP requests (default 30s)
-  -verbosity uint
-    	Set logging verbosity. (default 1)
-
-```
+See `-help`.
 
 ## Configuration
 
-_TODO: write some info about how the dynamic routing works_
+- `push_interval`
+  - Valid sections: `[config]`
+  - Default: `60`
+  - interval of scraping in seconds
+- `pushgateway_url`
+  - Valid sections: `[config]`, `[<resource>]`
+  - Default: ``
+  - URL of the pushgateway. If you want to use inverse multiplexing by metric name, you have to include `%s` in the string. That place will be used by the resolved route destination either from route map file or default_route. Can be configured both in `[config]` section and separately for each resource.
+- `route_map`
+  - Valid sections: `[config]`, `[<resource>]`
+  - Default: n/a
+  - Absolute path to the route map file. Can be configured both in `[config]` section and separately for each resource. **Mandatory when using inverse multiplexing**
+- `default_route`
+  - Valid sections: `[config]`, `[<resource>]`
+  - Default: n/a
+  - Default route for metrics with unnamed prefixes. Can include multiple strings separated by `,` (without spaces). Metrics will be pushed to all the named destinations. Can be configured both in `[config]` section and separately for each resource. **Mandatory when using inverse multiplexing**
+- `host`
+  - Valid sections: `[<resource>]`
+  - Default: `localhost`
+  - Hostname of the resource
+- `port` **mandatory option**
+  - Valid sections: `[<resource>]`
+  - Default: `0`
+  - Port of the resource.
+- `path`
+  - Valid sections: `[<resource>]`
+  - Default: `/metrics`
+  - The path part of the resource URL.
+- `ssl`
+  - Valid sections: `[<resource>]`
+  - Default: `false`
+  - Whether the endpoint is encrypted (HTTPS).
 
-### Example config file
+
+### Example config
+
 ```
 [config]
-pushgateway_url = "http://localhost:9091" # Default
-push_interval = 60                        # Default (in seconds)
+push_interval = 60                 # Default (in seconds)
+pushgateway_url = "http://%s.somedomain.com:9092" # Default
+route_map = "/path/to/route1.map"
+default_route = "prometheus1,prometheus2"
 
 [resource1]
 host = "localhost" # Default
@@ -36,17 +66,17 @@ ssl = false        # Default
 port = 9111
 
 [resource2]
-pushgateway_url = "http://%s:9091/"
+pushgateway_url = "http://%s.somedomain.com:9091/"
+route_map = "/path/to/route2.map"
 default_route = "prometheus"
-route_map = "path/to/route.map"
 port = 9112
 ```
 
 ### Example route map
 ```
-go_ prometheus1.somedomain.com
-go_debug_ prometheus2.somedomain.com
-mem_ prometheus1.somedomain.com
+go_ prometheus1
+go_debug_ prometheus
+mem_ prometheus1
 ```
 
 
