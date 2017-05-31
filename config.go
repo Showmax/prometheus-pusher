@@ -118,7 +118,7 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 			host:           "localhost",
 			port:           0,
 			ssl:            false,
-			path:           "/metrics",
+			path:           "metrics",
 			routeMap:       p.routeMap,
 		}
 
@@ -147,6 +147,7 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 
 		if t.Has(resName + ".path") {
 			res.path = t.Get(resName + ".path").(string)
+			res.path = strings.TrimPrefix(res.path, "/")
 		}
 
 		if t.Has(resName + ".route_map") {
