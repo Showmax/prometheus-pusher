@@ -31,10 +31,10 @@ TEST = test/done
 VENDOR_LIBS = $(shell govendor list +v,^u +e +m | awk '{ print "vendor/"$$2 }' | sort | uniq)
 PROJECT_ALL_FILES = $(wildcard *.go)
 PROJECT_BUILD_FILES = $(filter-out $(wildcard *test.go),$(PROJECT_ALL_FILES))
-VERSION = $(file <VERSION)
+VERSION = $(shell cat VERSION)
 
 -include config.mk .config.mk .cfg.mk includes.mk .includes.mk
-https://github.com/golang/go/wiki/SliceTricks
+
 # overrideable variables
 GO ?= $(shell which go)
 GOVENDOR ?= govendor
