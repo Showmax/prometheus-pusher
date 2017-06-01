@@ -36,12 +36,10 @@ type metric struct {
 // If there are less than 3 fields, timestamp is added.
 //
 func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte) *metric {
-	mf := bytes.Fields(m.bytes[m.dBrd[idx][1]:m.dBrd[idx][2]])
-	if len(mf) < 3 { // no timestamp
+	mf := bytes.Fields(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][2]])
+	if len(bytes.Fields(m.bytes[m.dBrd[idx][1]:m.dBrd[idx][2]])) < 2 { // no timestamp
 		mf = append(mf, *ts)
 	}
-	mf = append([][]byte{m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]}, mf...)
-
 	return &metric{
 		dsts:  rm.route(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]),
 		bytes: bytes.Join(mf, []byte{' '}),
