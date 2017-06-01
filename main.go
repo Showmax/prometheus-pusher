@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -27,6 +28,7 @@ var (
 	serviceName       = "prometheus-pusher"
 	version           string
 	versionFlag       bool
+	printMutex        = &sync.Mutex{}
 )
 
 func init() {
