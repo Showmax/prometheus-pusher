@@ -125,9 +125,20 @@ func (r *resource) getMetrics() []byte {
 			"error":         err.Error(),
 			"resource_name": r.name,
 			"resource_url":  r.resURL,
-		}).Error("Failed to read response body.")
+		}).Error("Failed to read response body while getting metrics.")
 		return nil
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		logger.WithFields(logrus.Fields{
+			"body":          body,
+			"status":        resp.StatusCode,
+			"resource_name": r.name,
+			"resource_url":  r.resURL,
+		}).Error("Got non-OK status code while getting metrics.")
+		return nil
+	}
+
 	return body
 }
 
@@ -158,7 +169,25 @@ func (r *resource) pushMetrics(metrics []byte, dst string, wg *sync.WaitGroup) {
 		}).Error("Failed to push metrics.")
 		return
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"error":         err.Error(),
+			"resource_name": r.name,
+			"resource_url":  r.resURL,
+		}).Error("Failed to read response body while pushing metrics.")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		logger.WithFields(logrus.Fields{
+			"body":          body,
+			"status":        resp.StatusCode,
+			"resource_name": r.name,
+			"resource_url":  r.resURL,
+		}).Error("Got non-OK status code while pushing metrics.")
+	}
 	return
 }
 
