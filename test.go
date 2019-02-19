@@ -7,7 +7,7 @@ import (
 
 var mbTest, cfgTest []byte
 
-func init() {
+func loadTestConfig() {
 	var err error
 	dummy = true
 	cfgTest, err = ioutil.ReadFile("test/config")

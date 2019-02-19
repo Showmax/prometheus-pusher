@@ -9,6 +9,7 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
+	loadTestConfig()
 	var m *metrics
 	var mapped map[string][]byte
 	rm := newRouteMap("test/routes", "test")
@@ -44,6 +45,7 @@ func TestMetrics(t *testing.T) {
 }
 
 func BenchmarkMetrics(b *testing.B) {
+	loadTestConfig()
 	rm := newRouteMap("test/routes", "test")
 	for i := 0; i < b.N; i++ {
 		newMetrics(mbTest).imux(rm)
