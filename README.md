@@ -8,7 +8,7 @@
 
 ## Installation
 ```
-$ go get -u github.com/ShowMax/prometheus-pusher
+$ go get -u github.com/Showmax/prometheus-pusher
 ```
 
 ## Usage
@@ -81,7 +81,7 @@ mem_ prometheus1
 
 
 ## Logging
-`prometheus-pusher` uses [logrus](https://github.com/Sirupsen/logrus/) with [sockrus](https://github.com/ShowMax/sockrus) wrapper for logging.
+`prometheus-pusher` uses [logrus](https://github.com/sirupsen/logrus/) with [sockrus](https://github.com/Showmax/sockrus) wrapper for logging.
 
 ## Contributing
 PRs which enhance, but don't break functionality are welcome. Tests are requires whenever possible.

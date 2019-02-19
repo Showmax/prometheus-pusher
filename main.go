@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	fqdn "github.com/ShowMax/go-fqdn"
-	"github.com/ShowMax/sockrus"
-	"github.com/Sirupsen/logrus"
+	fqdn "github.com/Showmax/go-fqdn"
+	"github.com/Showmax/sockrus"
+	"github.com/sirupsen/logrus"
 )
 
 // global vars
