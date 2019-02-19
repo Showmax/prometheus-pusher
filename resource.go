@@ -188,7 +188,6 @@ func (r *resource) pushMetrics(metrics []byte, dst string, wg *sync.WaitGroup) {
 			"resource_url":  r.resURL,
 		}).Error("Got non-OK status code while pushing metrics.")
 	}
-	return
 }
 
 // gets metrics, does inverse-multiplexing on the data
