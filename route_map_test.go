@@ -6,7 +6,6 @@ import (
 )
 
 func TestRouteMap(t *testing.T) {
-	loadTestConfig()
 	var rm *routeMap
 	routeCases := []struct {
 		try    []byte

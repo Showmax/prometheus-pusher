@@ -180,9 +180,9 @@ func (r *resource) pushMetrics(metrics []byte, dst string, wg *sync.WaitGroup) {
 		}).Error("Failed to read response body while pushing metrics.")
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusAccepted {
 		logger.WithFields(logrus.Fields{
-			"body":          body,
+			"body":          string(body),
 			"status":        resp.StatusCode,
 			"resource_name": r.name,
 			"resource_url":  r.resURL,

@@ -3,7 +3,6 @@ package main
 import "testing"
 
 func TestResources(t *testing.T) {
-	loadTestConfig()
 	grm := newRouteMap("test/routes", "test")
 	c, _ := parseConfig(cfgTest)
 	var r *resources
