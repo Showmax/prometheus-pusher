@@ -28,6 +28,7 @@ func concatConfigFiles(path string) ([]byte, error) {
 
 	if pathInfo.IsDir() {
 		dir, _ := pathCheck.Readdir(-1)
+		buf := make([][]byte, len(dir))
 		for _, file := range dir {
 			if strings.HasSuffix(file.Name(), ".toml") && (file.Mode().IsRegular()) {
 				fileName := path + "/" + file.Name()
@@ -36,9 +37,10 @@ func concatConfigFiles(path string) ([]byte, error) {
 					logger.Errorf("Failed to read config file %s - %s", fileName, err2.Error())
 					continue
 				}
-				config = append(config, data...)
+				buf = append(buf, data)
 			}
 		}
+		config = bytes.Join(buf, []byte("\n"))
 		return config, nil
 	}
 

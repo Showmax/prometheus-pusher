@@ -9,10 +9,11 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
+	loadTestConfig()
 	var m *metrics
 	var mapped map[string][]byte
 	rm := newRouteMap("test/routes", "test")
-	testRe := regexp.MustCompile("^(?:\\w+(?:{.*?})?)\\s(?:-?\\d+(?:\\.\\d+(?:e(\\+|-)\\d+)?)?)\\s(?:\\d{8,14})$")
+	testRe := regexp.MustCompile(`^(?:\w+(?:{.*?})?)\s(?:-?\d+(?:\.\d+(?:e(\+|-)\d+)?)?)\s(?:\d{8,14})$`)
 
 	t.Run("new", func(t *testing.T) {
 		m = newMetrics(mbTest)
@@ -44,6 +45,7 @@ func TestMetrics(t *testing.T) {
 }
 
 func BenchmarkMetrics(b *testing.B) {
+	loadTestConfig()
 	rm := newRouteMap("test/routes", "test")
 	for i := 0; i < b.N; i++ {
 		newMetrics(mbTest).imux(rm)
