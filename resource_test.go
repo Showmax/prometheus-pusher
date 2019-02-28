@@ -13,7 +13,7 @@ func TestResources(t *testing.T) {
 		<-r.run()
 	})
 	t.Run("process", func(t *testing.T) {
-		r.process()
+		r.process(c)
 	})
 	t.Run("shutdown", func(t *testing.T) {
 		r.shutdown()

@@ -35,10 +35,45 @@ type metric struct {
 // ending whitespaces and splits the data into fields by the remaining whitespaces
 // If there are less than 3 fields, timestamp is added.
 //
-func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte) *metric {
+func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte, cfg *pusherConfig) *metric {
 	mf := bytes.Fields(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][2]])
 	if len(bytes.Fields(m.bytes[m.dBrd[idx][1]:m.dBrd[idx][2]])) < 2 { // no timestamp
 		mf = append(mf, *ts)
+	}
+	// Add labels from environment if configured
+	if len(cfg.envLabels) > 0 {
+		// If there are no labels add new ones
+		if mf[0][len(mf[0])-1] != 125 { // "}"
+			mf[0] = bytes.Join(
+				[][]byte{
+					mf[0],
+					[]byte("{"),
+					cfg.envLabels,
+					[]byte("}"),
+				},
+				[]byte{})
+		} else {
+			// If there are existing labels tamper with them
+			if mf[0][len(mf[0])-2] != 123 { // "{"
+				mf[0] = bytes.Join(
+					[][]byte{
+						mf[0][:len(mf[0])-1],
+						[]byte(","),
+						cfg.envLabels,
+						[]byte("}"),
+					},
+					[]byte{})
+			} else {
+				// If labels are actually empty replace them
+				mf[0] = bytes.Join(
+					[][]byte{
+						mf[0][:len(mf[0])-1],
+						cfg.envLabels,
+						[]byte("}"),
+					},
+					[]byte{})
+			}
+		}
 	}
 	return &metric{
 		dsts:  rm.route(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]),
@@ -49,7 +84,7 @@ func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte) *metric {
 // metrics scanner constructor
 // it also automatically runs the scanner
 //
-func newMetrics(bytes []byte) *metrics {
+func newMetrics(bytes []byte, cfg *pusherConfig) *metrics {
 	m := &metrics{
 		bytes:  bytes,
 		cNl:    true,
@@ -60,7 +95,7 @@ func newMetrics(bytes []byte) *metrics {
 		dBrd:   make([][3]uint64, 0),
 		dCmt:   make([][2]uint64, 0),
 	}
-	return m.scan()
+	return m.scan(cfg)
 }
 
 func newComment(m *metrics, idx int) []byte {
@@ -70,7 +105,7 @@ func newComment(m *metrics, idx int) []byte {
 // scans bytes byte by byte and marks indices
 // of metric name and bytes borders of self
 //
-func (m *metrics) scan() *metrics {
+func (m *metrics) scan(cfg *pusherConfig) *metrics {
 	for idx, char := range m.bytes {
 		switch {
 		case m.isValidNameChar(idx) && m.isOnNewLine(): // [a-zA-Z0-9_] character on new line
@@ -127,7 +162,7 @@ func (m *metrics) scan() *metrics {
 // Also prepends each destination bucket with all the comment
 // lines from input data.
 //
-func (m *metrics) imux(rm *routeMap) map[string][]byte {
+func (m *metrics) imux(rm *routeMap, cfg *pusherConfig) map[string][]byte {
 	// init
 	r := make(map[string][]byte)
 	ch := make(chan *metric, len(m.dBrd))
@@ -136,7 +171,7 @@ func (m *metrics) imux(rm *routeMap) map[string][]byte {
 
 	// map data
 	for i := range m.dBrd {
-		ch <- newMetric(m, i, rm, &ts)
+		ch <- newMetric(m, i, rm, &ts, cfg)
 	}
 	close(ch)
 
