@@ -48,6 +48,11 @@ See `-help`.
   - Valid sections: `[<resource>]`
   - Default: `false`
   - Whether the endpoint is encrypted (HTTPS).
+- `env_labels`
+  - Valid sections: `[default_env_labels], [service_env_labels]`
+  - Default: n/a
+  - List of ENV variables that will be converted into the labels in all metrics scraped in defined `[<resource>]`s
+  - Final list is a merge of both lists
 
 
 ### Example config
