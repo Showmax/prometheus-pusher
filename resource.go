@@ -36,10 +36,10 @@ func createResources(cfg *pusherConfig, grm *routeMap) *resources {
 	}
 }
 
-func (rs *resources) process() {
+func (rs *resources) process(cfg *pusherConfig) {
 	for _, r := range rs.rs {
 		rs.wg.Add(1)
-		go r.getAndPush(rs.wg)
+		go r.getAndPush(rs.wg, cfg)
 	}
 	rs.wg.Wait()
 }
@@ -194,12 +194,12 @@ func (r *resource) pushMetrics(metrics []byte, dst string, wg *sync.WaitGroup) {
 // by metrics names and route definitions and pushes the
 // data into promethei
 //
-func (r *resource) getAndPush(wgImux *sync.WaitGroup) {
+func (r *resource) getAndPush(wgImux *sync.WaitGroup, cfg *pusherConfig) {
 	defer wgImux.Done()
 	wgPush := &sync.WaitGroup{}
 	if metricsBytes := r.getMetrics(); metricsBytes != nil {
-		m := newMetrics(metricsBytes)
-		for dst, body := range m.imux(r.routes) {
+		m := newMetrics(metricsBytes, cfg)
+		for dst, body := range m.imux(r.routes, cfg) {
 			wgPush.Add(1)
 			go r.pushMetrics(body, dst, wgPush)
 		}

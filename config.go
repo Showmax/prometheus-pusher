@@ -68,6 +68,7 @@ type resourceConfig struct {
 // it contains instances of resourceConfig
 //
 type pusherConfig struct {
+	envLabels      []byte
 	pushGatewayURL string
 	defaultRoute   string
 	pushInterval   time.Duration
@@ -88,6 +89,23 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 	t, err := toml.LoadReader(rd)
 	if err != nil {
 		return nil, err
+	}
+
+	p.envLabels = make([]byte, 0)
+	if t.Has("config.env_labels") {
+		envLabelLabels := t.Get("config.env_labels").([]interface{})
+		envLabels := make([][]byte, 0)
+		for _, label := range envLabelLabels {
+			strLabel := label.(string)
+			val := os.Getenv(strLabel)
+			if len(val) != 0 {
+				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel), val)))
+				logger.Debugf("Added %s=%s label from environment", strLabel, val)
+			} else {
+				logger.Warnf("Tried to fetch %s from environment but it's missing", strLabel)
+			}
+		}
+		p.envLabels = bytes.Join(envLabels, []byte(","))
 	}
 
 	if t.Has("config.pushgateway_url") {

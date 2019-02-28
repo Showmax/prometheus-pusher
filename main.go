@@ -104,12 +104,12 @@ func main() {
 		}
 	}()
 
-	resources.process()
+	resources.process(pusherCfg)
 
 	for {
 		select {
 		case <-resources.run():
-			resources.process()
+			resources.process(pusherCfg)
 		case <-resources.stop():
 			logger.Info("Resources processing stopped")
 			os.Exit(0)
