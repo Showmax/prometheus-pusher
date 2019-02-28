@@ -92,17 +92,26 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 	}
 
 	p.envLabels = make([]byte, 0)
-	if t.Has("config.env_labels") {
-		envLabelLabels := t.Get("config.env_labels").([]interface{})
+	envLabelLabels := make([]interface{}, 0)
+	envLabelsSet := false
+	if t.Has("default_env_labels") && t.Has("default_env_labels.env_labels") {
+		envLabelLabels = append(envLabelLabels, t.Get("default_env_labels.env_labels").([]interface{})...)
+		envLabelsSet = true
+	}
+	if t.Has("service_env_labels") && t.Has("service_env_labels.env_labels") {
+		envLabelLabels = append(envLabelLabels, t.Get("service_env_labels.env_labels").([]interface{})...)
+		envLabelsSet = true
+	}
+
+	if envLabelsSet {
 		envLabels := make([][]byte, 0)
 		for _, label := range envLabelLabels {
-			strLabel := label.(string)
+		        strLabel := label.(string)
 			val := os.Getenv(strLabel)
 			if len(val) != 0 {
-				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel), val)))
-				logger.Debugf("Added %s=%s label from environment", strLabel, val)
-			} else {
-				logger.Warnf("Tried to fetch %s from environment but it's missing", strLabel)
+				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel)), val)))
+				logger.Debugf("Got additional ENV label %s with value %s", strings.ToLower(strLabel), val)
+
 			}
 		}
 		p.envLabels = bytes.Join(envLabels, []byte(","))
@@ -127,7 +136,7 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 	}
 
 	for _, resName := range t.Keys() {
-		if resName == "config" {
+		if resName == "config" || resName == "default_env_labels" || resName == "service_env_labels" {
 			continue
 		}
 
