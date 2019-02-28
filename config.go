@@ -114,7 +114,7 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 			envLabelsMap[strLabel] = struct{}{}
 			val := os.Getenv(strLabel)
 			if len(val) != 0 {
-				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel)), val))
+				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel), val)))
 				logger.Debugf("Got additional ENV label %s with value %s", strings.ToLower(strLabel), val)
 
 			}
