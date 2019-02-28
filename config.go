@@ -106,10 +106,11 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 	if envLabelsSet {
 		envLabels := make([][]byte, 0)
 		for _, label := range envLabelLabels {
-			val := os.Getenv(label.(string))
+		        strLabel := label.(string)
+			val := os.Getenv(strLabel)
 			if len(val) != 0 {
-				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(label.(string)), val)))
-				logger.Debugf("Got additional ENV label %s with value %s", strings.ToLower(label.(string)), val)
+				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel)), val)))
+				logger.Debugf("Got additional ENV label %s with value %s", strings.ToLower(strLabel), val)
 
 			}
 		}
