@@ -1,5 +1,4 @@
 [config]
-env_labels = ["FOO"]
 pushgateway_url = "http://%s:9091/metrics"
 route_map = "test/routes"
 default_route = "test0,test-bck"
@@ -12,3 +11,9 @@ port = 9091
 pushgateway_url = "http://test-static:9091/metrics"
 host = "test-remote"
 port = 9091
+
+[default_env_labels]
+env_labels = ["FOO", "BAR"]
+
+[service_env_labels]
+env_labels = ["FOOBAR"]
