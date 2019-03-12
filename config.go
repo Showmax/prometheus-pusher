@@ -68,7 +68,7 @@ type resourceConfig struct {
 // it contains instances of resourceConfig
 //
 type pusherConfig struct {
-	envLabels      []byte
+	envLabels      map[string]string
 	pushGatewayURL string
 	defaultRoute   string
 	pushInterval   time.Duration
@@ -91,7 +91,6 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 		return nil, err
 	}
 
-	p.envLabels = make([]byte, 0)
 	envLabelLabels := make([]interface{}, 0)
 	envLabelsSet := false
 	if t.Has("default_env_labels") && t.Has("default_env_labels.env_labels") {
@@ -104,22 +103,16 @@ func parseConfig(data []byte) (*pusherConfig, error) {
 	}
 
 	if envLabelsSet {
-		envLabels := make([][]byte, 0)
-		envLabelsMap := make(map[string]struct{})
+		envLabelsMap := make(map[string]string)
 		for _, label := range envLabelLabels {
 			strLabel := label.(string)
-			if _, ok := envLabelsMap[strLabel]; ok {
-				continue
-			}
-			envLabelsMap[strLabel] = struct{}{}
 			val := os.Getenv(strLabel)
 			if len(val) != 0 {
-				envLabels = append(envLabels, []byte(fmt.Sprintf(`%s="%s"`, strings.ToLower(strLabel), val)))
+				envLabelsMap[strings.ToLower(strLabel)] = val
 				logger.Debugf("Got additional ENV label %s with value %s", strings.ToLower(strLabel), val)
-
 			}
 		}
-		p.envLabels = bytes.Join(envLabels, []byte(","))
+		p.envLabels = envLabelsMap
 	}
 
 	if t.Has("config.pushgateway_url") {

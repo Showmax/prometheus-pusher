@@ -2,6 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"io"
+	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -37,47 +43,57 @@ type metric struct {
 //
 func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte, cfg *pusherConfig) *metric {
 	mf := bytes.Fields(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][2]])
-	if len(bytes.Fields(m.bytes[m.dBrd[idx][1]:m.dBrd[idx][2]])) < 2 { // no timestamp
-		mf = append(mf, *ts)
-	}
+
+	var buffer bytes.Buffer
 	// Add labels from environment if configured
-	if len(cfg.envLabels) > 0 {
-		// If there are no labels add new ones
-		if mf[0][len(mf[0])-1] != 125 { // "}"
-			mf[0] = bytes.Join(
-				[][]byte{
-					mf[0],
-					[]byte("{"),
-					cfg.envLabels,
-					[]byte("}"),
-				},
-				[]byte{})
-		} else {
-			// If there are existing labels tamper with them
-			if mf[0][len(mf[0])-2] != 123 { // "{"
-				mf[0] = bytes.Join(
-					[][]byte{
-						mf[0][:len(mf[0])-1],
-						[]byte(","),
-						cfg.envLabels,
-						[]byte("}"),
-					},
-					[]byte{})
-			} else {
-				// If labels are actually empty replace them
-				mf[0] = bytes.Join(
-					[][]byte{
-						mf[0][:len(mf[0])-1],
-						cfg.envLabels,
-						[]byte("}"),
-					},
-					[]byte{})
+	req, err := http.NewRequest("GET", "http://localhost", nil)
+	req.Header.Set("Content-Type", "text/plain")
+	var (
+		allSamples = make(model.Samples, 0, 1)
+		decSamples = make(model.Vector, 0, 1)
+	)
+	fullMetricLine := bytes.Join(mf, []byte{' '})
+	fullMetricLine = bytes.Join([][]byte{fullMetricLine, []byte("\n")}, []byte{})
+	sdec := expfmt.SampleDecoder{
+		Dec:  expfmt.NewDecoder(ioutil.NopCloser(bytes.NewReader(fullMetricLine)), expfmt.ResponseFormat(req.Header)),
+		Opts: &expfmt.DecodeOptions{},
+	}
+
+	for {
+		if err = sdec.Decode(&decSamples); err != nil {
+			// SampleDecoder returns EOF to throw the end of metrics
+			//  https://github.com/prometheus/common/blob/master/expfmt/decode.go#L132
+			if err == io.EOF {
+				err = nil
+				break
+			}
+			logger.Warnf("Cannot parse metric %s due to %s", string(mf[0]), err)
+			// In case something goes wrong let's fallback to original solution
+			return &metric{
+				dsts:  rm.route(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]),
+				bytes: bytes.Join(append(mf, *ts), []byte{' '}),
+			}
+			break
+		}
+		allSamples = append(allSamples, decSamples...)
+		// Declobber the decSamples just for sure
+		decSamples = decSamples[:0]
+	}
+
+
+	for _, sample := range allSamples {
+		if len(cfg.envLabels) > 0 {
+			for labelName, labelValue := range cfg.envLabels {
+				sample.Metric[model.LabelName(labelName)] = model.LabelValue(labelValue)
 			}
 		}
+		metric := fmt.Sprintf("%s %s %s", sample.Metric, sample.Value, *ts)
+		buffer.WriteString(metric)
 	}
+
 	return &metric{
 		dsts:  rm.route(m.bytes[m.dBrd[idx][0]:m.dBrd[idx][1]]),
-		bytes: bytes.Join(mf, []byte{' '}),
+		bytes: buffer.Bytes(),
 	}
 }
 
