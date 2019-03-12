@@ -3,9 +3,9 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -76,10 +76,8 @@ func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte, cfg *pusherConfig)
 			break
 		}
 		allSamples = append(allSamples, decSamples...)
-		// Declobber the decSamples just for sure
-		decSamples = decSamples[:0]
+		// decSamples = decSamples[:0]
 	}
-
 
 	for _, sample := range allSamples {
 		if len(cfg.envLabels) > 0 {
