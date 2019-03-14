@@ -46,8 +46,9 @@ func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte, cfg *pusherConfig)
 
 	var buffer bytes.Buffer
 	// Add labels from environment if configured
-	req, err := http.NewRequest("GET", "http://localhost", nil)
-	req.Header.Set("Content-Type", "text/plain")
+	// req, err := http.NewRequest("GET", "http://localhost", nil)
+	// req.Header.Set("Content-Type", "text/plain")
+	plainHttpContentType := http.Header{"content-type": []string{"text/plain"}}
 	var (
 		allSamples = make(model.Samples, 0, 1)
 		decSamples = make(model.Vector, 0, 1)
@@ -55,12 +56,12 @@ func newMetric(m *metrics, idx int, rm *routeMap, ts *[]byte, cfg *pusherConfig)
 	fullMetricLine := bytes.Join(mf, []byte{' '})
 	fullMetricLine = bytes.Join([][]byte{fullMetricLine, []byte("\n")}, []byte{})
 	sdec := expfmt.SampleDecoder{
-		Dec:  expfmt.NewDecoder(ioutil.NopCloser(bytes.NewReader(fullMetricLine)), expfmt.ResponseFormat(req.Header)),
+		Dec:  expfmt.NewDecoder(ioutil.NopCloser(bytes.NewReader(fullMetricLine)), expfmt.ResponseFormat(plainHttpContentType)),
 		Opts: &expfmt.DecodeOptions{},
 	}
 
 	for {
-		if err = sdec.Decode(&decSamples); err != nil {
+		if err := sdec.Decode(&decSamples); err != nil {
 			// SampleDecoder returns EOF to throw the end of metrics
 			//  https://github.com/prometheus/common/blob/master/expfmt/decode.go#L132
 			if err == io.EOF {
