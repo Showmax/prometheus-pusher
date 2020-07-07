@@ -65,7 +65,6 @@ func main() {
 	log.SetLevel(log.InfoLevel)
 	if s := os.Getenv("LOGLEVEL"); len(s) > 0 {
 		level, err := strconv.Atoi(s)
-		level = 5
 		if err != nil {
 			log.Errorf("could not parse log level (%s): %s", s, err)
 		} else {
